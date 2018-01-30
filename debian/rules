@@ -1,0 +1,39 @@
+#!/usr/bin/make -f
+# Copyright © 2002,2003 Colin Walters <walters@verbum.org>
+# Copyright © 2003 Daniel Stone <daniels@debian.org>
+# Copyright © 2006 Sjoerd Simons <sjoerd@debian.org>
+# Copyright © 2011 Michael Biebl <biebl@debian.org>
+
+include /usr/share/dpkg/default.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+pie,+bindnow
+
+%:
+	dh $@
+
+configure_options = --disable-bash-completion
+
+ifneq ($(filter libdbus-glib-1-doc,$(binaries)),)
+configure_options += --enable-gtk-doc
+else
+configure_options += --disable-gtk-doc
+endif
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		$(configure_options) \
+		$(NULL)
+
+override_dh_auto_install:
+	dh_auto_install
+	rm -f debian/tmp/usr/lib/*/*.la
+
+# Strict library versioning
+override_dh_makeshlibs:
+	dh_makeshlibs -V
+
+override_dh_strip:
+	dh_strip --ddeb-migration='libdbus-glib-1-2-dbg (<< 0.108-2~)'
+
+override_dh_missing:
+	dh_missing --fail-missing
